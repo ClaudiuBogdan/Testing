@@ -7,10 +7,12 @@
 
 
 
+
 //TODO Send multiplayer request code to get game.
 //TODO Send multiplayer score
 //TODO Get multiplayer results.
 const request = require("request-promise")
+const jwt = require('jsonwebtoken');
 
 
 const usersList = []
@@ -18,22 +20,36 @@ const usersList = []
 const test = async () => {
     try {
         const user = {}
-        const testApi = await r.get('https://party-dev.m75.ro/api/')
-        console.log("Test api response: ", testApi)
         //TODO Login with random number
         user.phoneNumber = generateRandomPhoneNumber();
         const testLogin = await r.post('https://party-dev.m75.ro/api/auth/login', { form: { phoneNumber: user.phoneNumber } });
         user.smsCode = JSON.parse(testLogin).response;
-        
+
         const tokenJson = await r.post('https://party-dev.m75.ro/api/auth/sms', { form: { phoneNumber: user.phoneNumber, code: user.smsCode } });
         user.token = JSON.parse(tokenJson).response
-        
+
         //TODO Set username if not set
-        console.log('User result:', user); // Print the HTML for the Google homepage.
+        const patchUsername = await r.patch('https://party-dev.m75.ro/api/users', {
+            form: { username: user.phoneNumber }, auth: {
+                bearer: user.token
+            }
+        });
+        user.username = JSON.parse(patchUsername).response.user.username
+
+
+        const tokenJsonRefresh = await r.post('https://party-dev.m75.ro/api/auth/refresh', {
+            auth: {
+                bearer: user.token
+            }
+        });
+        user.token = JSON.parse(tokenJsonRefresh).response
+
+        usersList.push(user)
     }
     catch (err) {
         console.error(err)
     }
+
 }
 
 function generateRandomPhoneNumber() {
@@ -47,6 +63,14 @@ function formatNumber(num, size) {
     return s.substr(s.length - size);
 }
 
-console.log(generateRandomPhoneNumber())
+const runAllTests = async () => {
+    const testRequestList = []
+    for (let i = 0; i < 1000; i++) {
+        testRequestList.push(test())
+        console.log("index", i)
+    }
+    const result = await Promise.all(testRequestList)
+    console.log(usersList)
+}
 
-test()
+runAllTests()
