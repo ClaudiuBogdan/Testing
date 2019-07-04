@@ -9,6 +9,9 @@
 ## PM2
 - https://github.com/Unitech/pm2/issues/2300
 
+## MySql
+- https://www.sitepoint.com/optimize-mysql-indexes-slow-queries-configuration/
+
 
 
 ```JavaScript
